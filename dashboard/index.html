@@ -40,7 +40,7 @@
                 </div>
             </div>
             <div class="header-actions">
-                <a href="https://akshaychauhan003.github.io/Porfoilio/" target="_blank" rel="noopener noreferrer" class="icon-btn live-link-btn" id="live-portfolio-link" aria-label="Open Live Portfolio" title="Open Live Deployed Portfolio (akshaychauhan003.github.io/Porfoilio/)">
+                <a href="https://akshaychauhan003.github.io/Portfolio/" target="_blank" rel="noopener noreferrer" class="icon-btn live-link-btn" id="live-portfolio-link" aria-label="Open Live Portfolio" title="Open Live Deployed Portfolio (akshaychauhan003.github.io/Portfolio/)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -229,7 +229,7 @@
             </button>
         </nav>
 
-        <!-- ── AUTHENTICATION & CONSOLE LOCK OVERLAY (PIN 2026) ── -->
+        <!-- ── AUTHENTICATION & CONSOLE LOCK OVERLAY ── -->
         <div class="dash-lock-overlay" id="auth-lock-overlay">
             <div class="lock-card">
                 <div class="lock-avatar-wrap">
@@ -239,12 +239,12 @@
                 <h2 class="lock-title">Akshay Console</h2>
                 <p class="lock-subtitle">Security Verification Required</p>
 
-                <!-- PIN Mode: Quick, direct unlock with PIN (2026) -->
+                <!-- PIN Mode: Quick, direct unlock with PIN -->
                 <form id="lock-pin-form" class="lock-form" style="display: flex; flex-direction: column; gap: 14px; width: 100%; margin-top: 16px;">
                     <div class="pin-input-wrap">
-                        <input type="password" id="lock-pin-input" inputmode="numeric" maxlength="8" placeholder="Enter PIN (e.g. 2026)" autocomplete="current-password" autofocus required>
+                        <input type="password" id="lock-pin-input" inputmode="numeric" maxlength="8" placeholder="Enter Security PIN" autocomplete="current-password" autofocus required>
                     </div>
-                    <p class="lock-hint" style="font-size: 12px; color: var(--text-muted); margin: 0 0 8px; text-align: center;">Enter your 4-digit security PIN to unlock the console (Default: 2026).</p>
+                    <p class="lock-hint" style="font-size: 12px; color: var(--text-muted); margin: 0 0 8px; text-align: center;">Enter your 4-digit security PIN to unlock the console.</p>
                     <button type="submit" class="lock-submit-btn" id="lock-pin-submit">Unlock Console →</button>
                     <p class="lock-error-text" id="lock-error-text" style="display: none; color: #ef4444; font-size: 12.5px; text-align: center; margin-top: 4px; font-weight: 600;"></p>
                 </form>
@@ -278,14 +278,14 @@
                     <div id="settings-user-status" style="padding: 10px 14px; background: var(--bg-card-subtle); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; font-size: 12.5px;">
                         <div>
                             <span style="color: var(--text-secondary);">Console Mode: </span>
-                            <strong id="settings-auth-user" style="color: var(--text-primary);">PIN Protected (2026)</strong>
+                            <strong id="settings-auth-user" style="color: var(--text-primary);">PIN Protected</strong>
                         </div>
                         <button type="button" id="settings-logout-btn" class="card-btn delete" style="padding: 4px 10px; font-size: 11px;">Lock Console</button>
                     </div>
 
                     <div class="form-field">
                         <label>Update Console Security PIN</label>
-                        <input type="password" id="cfg-admin-pin" placeholder="Enter new 4-digit PIN (e.g. 2026)">
+                        <input type="password" id="cfg-admin-pin" placeholder="Enter new 4-digit PIN">
                     </div>
                     <div class="form-field">
                         <label>EmailJS Service ID (Optional)</label>
@@ -377,19 +377,19 @@
                     <h3 id="proj-modal-title">Add Portfolio Project</h3>
                     <button class="modal-close" data-close-modal="proj-modal">&times;</button>
                 </div>
-                <form id="proj-form" class="modal-form">
+                <form id="proj-form" class="modal-form" novalidate>
                     <input type="hidden" id="proj-id">
                     
                     <!-- Carousel Display Position / Priority -->
                     <div class="form-field order-position-field">
                         <div class="field-label-row">
-                            <label for="proj-order">Carousel Display Position *</label>
+                            <label for="proj-order">Carousel Display Position</label>
                             <span class="field-hint">1 = Front &amp; Center on Portfolio</span>
                         </div>
                         <div class="order-input-row">
                             <div class="order-num-wrapper">
                                 <span class="order-hash">#</span>
-                                <input type="number" id="proj-order" min="1" max="99" value="1" required class="order-number-input">
+                                <input type="number" id="proj-order" min="1" max="99" value="1" class="order-number-input">
                             </div>
                             <div class="order-preset-pills">
                                 <button type="button" class="btn-order-preset active" data-order-preset="1">🌟 #1 Front &amp; Center</button>
@@ -400,19 +400,19 @@
                     </div>
 
                     <div class="form-field">
-                        <label>Project Title *</label>
-                        <input type="text" id="proj-title" required placeholder="e.g. NexusFlow AI Platform">
+                        <label>Project Title</label>
+                        <input type="text" id="proj-title" placeholder="e.g. NexusFlow AI Platform">
                     </div>
                     
                     <div class="form-field">
-                        <label>Category / Kicker *</label>
-                        <input type="text" id="proj-category" required placeholder="e.g. Distributed Cloud & AI">
+                        <label>Category / Kicker</label>
+                        <input type="text" id="proj-category" placeholder="e.g. Distributed Cloud & AI">
                     </div>
 
                     <!-- Tech Stack Selector with + Icon & List Selection & Custom Stack Option -->
                     <div class="form-field">
                         <div class="field-label-row">
-                            <label>Tech Stack *</label>
+                            <label>Tech Stack</label>
                             <span class="field-hint">Choose from list or add custom</span>
                         </div>
                         
@@ -420,7 +420,7 @@
                         <div class="tech-chips-container" id="tech-chips-container">
                             <!-- Populated dynamically with chips -->
                         </div>
-                        <input type="hidden" id="proj-tech-value" required>
+                        <input type="hidden" id="proj-tech-value">
 
                         <!-- Tech Picker Dropdown Trigger & Panel -->
                         <div class="tech-picker-wrapper">
@@ -443,7 +443,7 @@
                     <!-- Project Card Colour Selection with Types, No Repetition, and Repeated Warning Tick -->
                     <div class="form-field card-color-section">
                         <div class="field-label-row">
-                            <label>Project Card Colour *</label>
+                            <label>Project Card Colour</label>
                             <span class="color-selected-badge" id="color-selected-badge">
                                 <span class="color-preview-dot" id="color-preview-dot"></span>
                                 <span class="color-name-label" id="color-name-label">Electric Blue</span>
@@ -517,11 +517,11 @@
                     <div class="form-row">
                         <div class="form-field">
                             <label>Live Website URL</label>
-                            <input type="url" id="proj-live-url" placeholder="https://nexusflow.io/">
+                            <input type="text" id="proj-live-url" placeholder="https://nexusflow.io/ or #">
                         </div>
                         <div class="form-field">
                             <label>GitHub Repository URL</label>
-                            <input type="url" id="proj-github-url" placeholder="https://github.com/akshaychauhan003/...">
+                            <input type="text" id="proj-github-url" placeholder="https://github.com/akshaychauhan003/...">
                         </div>
                     </div>
 
@@ -572,8 +572,8 @@
                     </div>
 
                     <div class="form-field">
-                        <label>Description *</label>
-                        <textarea id="proj-desc" rows="3" required placeholder="High-throughput distributed systems platform designed for enterprise telemetry, automated failover, and real-time observability..."></textarea>
+                        <label>Description</label>
+                        <textarea id="proj-desc" rows="3" placeholder="High-throughput distributed systems platform designed for enterprise telemetry, automated failover, and real-time observability..."></textarea>
                     </div>
 
                     <div class="modal-actions">

@@ -2,7 +2,7 @@
 ## Comprehensive Architecture, Control Specifications & Operational Manual
 
 > **Document Version:** 3.0  
-> **Target Systems:** Live Portfolio Website (`akshaychauhan003.github.io/Porfoilio/`), Web Dashboard (`/dashboard/index.html`), and Native Android App (`AkshayConsole.apk`).
+> **Target Systems:** Live Portfolio Website (`akshaychauhan003.github.io/Portfolio/`), Web Dashboard (`/dashboard/index.html`), and Native Android App (`AkshayConsole.apk`).
 
 ---
 
@@ -47,7 +47,7 @@ The Dashboard interface is divided into a **Persistent Header Bar**, an **Authen
   * 🟢 **Green Pulse:** Cloud synchronized and Supabase Realtime WebSocket active.
   * 🟡 **Amber:** Local cache mode / syncing in background.
   * 🔴 **Red:** Cloud connection offline.
-* **Direct Live Portfolio Launcher (`#live-portfolio-link`):** Opens `https://akshaychauhan003.github.io/Porfoilio/` in a new tab to immediately verify live changes.
+* **Direct Live Portfolio Launcher (`#live-portfolio-link`):** Opens `https://akshaychauhan003.github.io/Portfolio/` in a new tab to immediately verify live changes.
 * **Direct APK Download (`#apk-download-btn`):** Downloads the compiled `AkshayConsole.apk` directly to mobile devices without requiring Google Play Store.
 * **Notification Bell (`#notif-btn`):** Audio/visual alert toggle for incoming contact inquiries and new client reviews.
 * **Settings Gear (`#settings-btn`):** Opens modal for Security PIN management and Email service keys.
@@ -372,4 +372,4 @@ Whenever changes are made to `dashboard/index.html`, `dashboard/dashboard.js`, o
 By following this specification:
 1. **The Administrator** manages projects, milestones, reviews, and messages through either `http://localhost:3000/dashboard/index.html` or the `AkshayConsole.apk` installed on Android.
 2. **The Cloud Database** acts as the single source of truth, storing structured records in Supabase PostgreSQL.
-3. **The Portfolio Website** (`akshaychauhan003.github.io/Porfoilio/`) renders purely from dynamic database records with seamless real-time reactivity and zero dependence on hardcoded static files.
+3. **The Portfolio Website** (`akshaychauhan003.github.io/Portfolio/`) renders purely from dynamic database records with seamless real-time reactivity and zero dependence on hardcoded static files.

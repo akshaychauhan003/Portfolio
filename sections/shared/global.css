@@ -10,7 +10,7 @@
         }
 
         html {
-            scroll-behavior: auto;
+            scroll-behavior: smooth;
             -webkit-text-size-adjust: 100%;
         }
         html.smooth-scroll {
@@ -23,12 +23,10 @@
             font-family: var(--font-body);
             overflow-x: hidden;
             cursor: default;
-            transition: background 1.5s var(--ease-cinema),
-                        color 1.5s var(--ease-cinema),
-                        border-color 1.2s var(--ease-cinema),
-                        box-shadow 1.5s var(--ease-cinema),
-                        filter 1.2s var(--ease-cinema);
+            transition: background 0.8s var(--ease-cinema),
+                        color 0.8s var(--ease-cinema);
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         a,

@@ -905,7 +905,7 @@
             });
         });
 
-        // Security Lock & Unlock Handlers (PIN 2026)
+        // Security Lock & Unlock Handlers
         elements.lockBtn?.addEventListener('click', () => {
             window.PortfolioData?.logoutAdmin();
             lockConsole();
@@ -1331,38 +1331,18 @@
             });
         }
 
-        // ── PROJECT FORM SUBMIT WITH REPETITION VALIDATION ──
+        // ── PROJECT FORM SUBMIT (NO COMPULSORY FIELDS) ──
         if (elements.projForm) {
             elements.projForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const rawId = (document.getElementById('proj-id').value || '').trim();
-                const title = document.getElementById('proj-title').value.trim();
+                const rawTitle = document.getElementById('proj-title').value.trim();
                 const category = document.getElementById('proj-category').value.trim();
-                const live_url = document.getElementById('proj-live-url').value.trim();
+                const live_url = document.getElementById('proj-live-url')?.value.trim() || '';
+                const github_url = document.getElementById('proj-github-url')?.value.trim() || '';
                 const video_url = document.getElementById('proj-video-data').value.trim();
                 const card_color = document.getElementById('proj-card-color').value.trim() || '#3d8bff';
                 const description = document.getElementById('proj-desc').value.trim();
-
-                // 1. Tech Stack Validation
-                if (state.selectedTechStack.length === 0) {
-                    showToast('⚠️ Please add at least one tech stack item (+ Add Stack)');
-                    return;
-                }
-
-                // 2. Colour Repetition Check & Required Confirmation Tick
-                const repeatedBy = findColorUsage(card_color, state.currentProjectId);
-                const isRepeatAllowed = document.getElementById('allow-repeat-color-checkbox')?.checked;
-
-                if (repeatedBy && !isRepeatAllowed) {
-                    showToast(`⚠️ Colour repeated! Used by "${repeatedBy.title}". Please tick "I want this colour to be repeated" to confirm.`);
-                    const alertEl = document.getElementById('color-repeat-alert');
-                    if (alertEl) {
-                        alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        alertEl.style.borderColor = '#EA580C';
-                        setTimeout(() => { alertEl.style.borderColor = '#FDBA74'; }, 1500);
-                    }
-                    return;
-                }
 
                 // Locate existing project by ID, slug, currentProjectId, or normalized title to guarantee UPDATE instead of duplicate INSERT
                 let existing = null;
@@ -1372,19 +1352,24 @@
                 if (!existing && state.currentProjectId) {
                     existing = state.projects.find(p => p.id === state.currentProjectId || p.slug === state.currentProjectId);
                 }
-                if (!existing) {
-                    const normTitle = title.toLowerCase().replace(/[^a-z0-9]/g, '');
-                    existing = state.projects.find(p => (p.title || '').toLowerCase().replace(/[^a-z0-9]/g, '') === normTitle);
+                if (!existing && rawTitle) {
+                    const normTitle = rawTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (normTitle) {
+                        existing = state.projects.find(p => (p.title || '').toLowerCase().replace(/[^a-z0-9]/g, '') === normTitle);
+                    }
                 }
+
+                const title = rawTitle || (existing && existing.title ? existing.title : 'Untitled Project');
 
                 // Preserve original slug; always use UUID primary keys for cloud persistence
                 const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                const cleanSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
                 const slug = existing && existing.slug
                     ? existing.slug
-                    : (title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || ('project-' + Date.now()));
+                    : (cleanSlug || ('project-' + Date.now()));
                 const finalId = (existing && existing.id && uuidRe.test(existing.id))
                     ? existing.id
-                    : ((rawId && uuidRe.test(rawId)) ? rawId : ((window.crypto && crypto.randomUUID) ? crypto.randomUUID() : null));
+                    : ((rawId && uuidRe.test(rawId)) ? rawId : ((window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('proj-' + Date.now())));
                 if (!finalId) {
                     showToast('⚠ Unable to generate a valid project id');
                     return;
@@ -1406,22 +1391,21 @@
                     }
                 });
 
-                const github_url = document.getElementById('proj-github-url')?.value.trim() || '';
-
                 const proj = {
                     id: finalId,
                     slug,
                     title,
                     category,
-                    tech_stack: [...state.selectedTechStack],
+                    tech_stack: [...(state.selectedTechStack || [])],
                     live_url,
                     github_url,
                     video_url,
                     card_color,
                     description,
                     preview_type: video_url ? 'video' : 'surface',
-                    is_active: true,
-                    order_index
+                    is_active: existing ? existing.is_active !== false : true,
+                    order_index,
+                    thumbnail_url: existing ? (existing.thumbnail_url || '') : ''
                 };
 
                 // Optimistic UI

@@ -20,6 +20,7 @@ window.IntroSystem = (() => {
     const initProgressBar = () => {
         const bar = document.getElementById('intro-progress');
         if (!bar) return;
+        bar.style.display = 'block';
         const setP = (p, dur = 300) => {
             bar.style.transition = `width ${dur}ms var(--ease-out)`;
             bar.style.width = p + '%';
@@ -30,7 +31,10 @@ window.IntroSystem = (() => {
         setTimeout(() => setP(95, 200), 2000);
         setTimeout(() => {
             setP(100, 200);
-            setTimeout(() => { bar.style.opacity = '0'; }, 300);
+            setTimeout(() => {
+                bar.style.opacity = '0';
+                setTimeout(() => { bar.style.display = 'none'; }, 300);
+            }, 300);
         }, 2600);
     };
 
@@ -89,7 +93,11 @@ window.IntroSystem = (() => {
     /* ── Start Intro Sequence ── */
     const startIntro = () => {
         const skipBtn = document.getElementById('skip-btn');
-        if (skipBtn) skipBtn.style.display = 'flex';
+        if (skipBtn) {
+            skipBtn.style.display = 'flex';
+            skipBtn.style.opacity = '';
+            skipBtn.style.pointerEvents = '';
+        }
         document.documentElement.setAttribute('data-theme', window.AppState.theme);
 
         // Allow pressing Escape or Space anywhere to skip intro immediately
@@ -414,6 +422,8 @@ window.IntroSystem = (() => {
         const card = document.getElementById('akshay-card');
         const layer = document.getElementById('transition-layer');
         const results = document.getElementById('results-page');
+        const skip = document.getElementById('skip-btn');
+        const bar = document.getElementById('intro-progress');
 
         // Cleanup hover/cursor states immediately
         if (card) {
@@ -422,6 +432,17 @@ window.IntroSystem = (() => {
         }
         document.body.classList.remove('cursor-hover', 'cursor-click');
         window.AppState.ghostMode = false;
+
+        // Hide skip button & progress bar as intro transitions to portfolio
+        if (skip) {
+            skip.style.opacity = '0';
+            skip.style.pointerEvents = 'none';
+            setTimeout(() => { skip.style.display = 'none'; }, 220);
+        }
+        if (bar) {
+            bar.style.opacity = '0';
+            setTimeout(() => { bar.style.display = 'none'; }, 220);
+        }
 
         if (!card || !layer) {
             revealPortfolio();
@@ -485,6 +506,25 @@ window.IntroSystem = (() => {
         const portfolio = document.getElementById('portfolio');
         const canvas = document.getElementById('three-canvas');
         const panel = document.getElementById('control-panel');
+        const skip = document.getElementById('skip-btn');
+        const bar = document.getElementById('intro-progress');
+        const overlay = document.getElementById('intro-overlay');
+        const skeleton = document.getElementById('skeleton-screen');
+        const results = document.getElementById('results-page');
+
+        // Ensure all intro-related overlays and buttons are hidden
+        if (skip) {
+            skip.style.display = 'none';
+            skip.style.opacity = '';
+            skip.style.pointerEvents = '';
+        }
+        if (bar) {
+            bar.style.display = 'none';
+            bar.style.opacity = '0';
+        }
+        if (overlay) overlay.style.display = 'none';
+        if (skeleton) skeleton.style.display = 'none';
+        if (results) results.style.display = 'none';
 
         if (portfolio) {
             portfolio.style.display = 'block';
@@ -566,10 +606,16 @@ window.IntroSystem = (() => {
         if (overlay) overlay.style.display = 'none';
         if (skeleton) skeleton.style.display = 'none';
         if (results) results.style.display = 'none';
-        if (skip) skip.style.display = 'none';
-        if (bar) bar.style.display = 'none';
+        if (skip) {
+            skip.style.display = 'none';
+            skip.style.opacity = '';
+            skip.style.pointerEvents = '';
+        }
+        if (bar) {
+            bar.style.display = 'none';
+            bar.style.opacity = '0';
+        }
 
-        initProgressBar();
         revealPortfolio();
         sessionStorage.setItem('intro-played', '1');
         window.AppState.introPlayed = true;
@@ -588,10 +634,14 @@ window.IntroSystem = (() => {
         const intro = document.getElementById('intro-overlay');
         const skipBtn = document.getElementById('skip-btn');
         const bar = document.getElementById('intro-progress');
+        const skeleton = document.getElementById('skeleton-screen');
+        const results = document.getElementById('results-page');
 
         if (portfolio) portfolio.style.display = 'none';
         if (canvas) canvas.classList.remove('visible');
         if (panel) panel.classList.remove('visible');
+        if (skeleton) skeleton.style.display = 'none';
+        if (results) results.style.display = 'none';
 
         // Reset intro input & suggestions
         const csInput = document.getElementById('cs-input');
@@ -604,6 +654,7 @@ window.IntroSystem = (() => {
 
         // Reset progress bar
         if (bar) {
+            bar.style.display = 'block';
             bar.style.opacity = '1';
             bar.style.width = '0%';
         }
@@ -615,7 +666,11 @@ window.IntroSystem = (() => {
             intro.style.transition = 'opacity 0.5s';
             requestAnimationFrame(() => { intro.style.opacity = '1'; });
         }
-        if (skipBtn) skipBtn.style.display = 'flex';
+        if (skipBtn) {
+            skipBtn.style.display = 'flex';
+            skipBtn.style.opacity = '';
+            skipBtn.style.pointerEvents = '';
+        }
 
         // Reset ghost cursor state
         window.AppState.ghostMode = false;

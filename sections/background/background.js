@@ -780,22 +780,31 @@ window.BackgroundSystem = (() => {
         }, { passive: true });
 
         // Scroll Tracking: smoothly syncs 3D camera with page scroll
-        const updateScroll = () => {
-            const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
-            const docHeight = Math.max(
+        let cachedDocHeight = 1;
+        const updateDocHeight = () => {
+            cachedDocHeight = Math.max(
                 document.documentElement.scrollHeight - window.innerHeight,
                 1
             );
-            const progress = Math.min(Math.max(scrollY / docHeight, 0), 1);
+        };
+
+        const updateScroll = () => {
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            const progress = Math.min(Math.max(scrollY / cachedDocHeight, 0), 1);
             // Translate camera down through the 3D scene from 0 to -115
             targetCameraY = -progress * 115;
         };
 
+        updateDocHeight();
         window.addEventListener('scroll', updateScroll, { passive: true });
         updateScroll();
 
         // Responsive resize
-        window.addEventListener('resize', onResize, { passive: true });
+        window.addEventListener('resize', () => {
+            onResize();
+            updateDocHeight();
+            updateScroll();
+        }, { passive: true });
 
         // Visibility handling (pause when tab hidden)
         document.addEventListener('visibilitychange', () => {
@@ -829,9 +838,9 @@ window.BackgroundSystem = (() => {
         const elapsed = clock ? clock.getElapsedTime() : 0;
 
         // Smooth Camera Drift: Lerp Y towards scroll target, X towards mouse parallax
-        currentCameraY += (targetCameraY - currentCameraY) * 0.055;
+        currentCameraY += (targetCameraY - currentCameraY) * 0.12;
         camera.position.y = currentCameraY + (-mouseY * 1.6);
-        camera.position.x += (mouseX * 3.2 - camera.position.x) * 0.035;
+        camera.position.x += (mouseX * 3.2 - camera.position.x) * 0.045;
         camera.lookAt(camera.position.x * 0.25, currentCameraY, 0);
 
         // Update 3D World Mouse coordinates

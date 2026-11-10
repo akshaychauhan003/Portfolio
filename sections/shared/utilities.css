@@ -51,29 +51,31 @@
         .reveal-left,
         .reveal-right {
             opacity: 0;
-            transform: translateY(36px) scale(0.92);
-            transition: opacity 1.5s cubic-bezier(0.22, 1, 0.36, 1), 
-                        transform 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+            transform: translateY(24px);
+            transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), 
+                        transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
             will-change: opacity, transform;
         }
 
         .reveal.visible {
             opacity: 1;
-            transform: translateY(0) scale(1);
+            transform: translateY(0);
+            will-change: auto;
         }
 
         .reveal-left {
-            transform: translateX(-36px) scale(0.92);
+            transform: translateX(-24px);
         }
 
         .reveal-right {
-            transform: translateX(36px) scale(0.92);
+            transform: translateX(24px);
         }
 
         .reveal-left.visible,
         .reveal-right.visible {
             opacity: 1;
-            transform: translateX(0) scale(1);
+            transform: translateX(0);
+            will-change: auto;
         }
 
         /* Floating animation for project cards */
