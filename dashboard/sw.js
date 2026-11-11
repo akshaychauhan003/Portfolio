@@ -10,6 +10,7 @@ const ASSETS_TO_CACHE = [
     './dashboard.js',
     './icon.png',
     './manifest.json',
+    './toing.wav',
     '../assets/js/supabase-config.js'
 ];
 

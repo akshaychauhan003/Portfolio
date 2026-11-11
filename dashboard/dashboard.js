@@ -68,22 +68,111 @@
         cfgAdminPin: document.getElementById('cfg-admin-pin'),
     };
 
-    // Audio chime for new notifications
-    const playNotificationSound = () => {
+    // ─────────────────────────────────────────────────────────────
+    // NOTIFICATION SOUND SYSTEM: "TOINGGGGG" SPRING BOUNCE & CHIME
+    // ─────────────────────────────────────────────────────────────
+    let globalAudioCtx = null;
+    const getAudioContext = () => {
+        if (!globalAudioCtx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) globalAudioCtx = new AudioCtx();
+        }
+        if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+            globalAudioCtx.resume().catch(() => {});
+        }
+        return globalAudioCtx;
+    };
+
+    ['click', 'touchstart', 'keydown'].forEach(evt => {
+        window.addEventListener(evt, () => {
+            getAudioContext();
+        }, { once: true, passive: true });
+    });
+
+    // Synthesize cartoon spring "toinggggg" sound via Web Audio API
+    const playSynthesizedToing = () => {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-            gain.gain.setValueAtTime(0.15, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-            osc.start();
-            osc.stop(ctx.currentTime + 0.3);
-        } catch {}
+            const ctx = getAudioContext();
+            if (!ctx) return;
+
+            const now = ctx.currentTime;
+            const duration = 1.15;
+
+            // 1. Carrier Oscillator (the main spring pitch)
+            const carrier = ctx.createOscillator();
+            carrier.type = 'sine';
+
+            // Rapid initial twang bend upward from 200Hz to 620Hz in 45ms, then gently decaying
+            carrier.frequency.setValueAtTime(200, now);
+            carrier.frequency.exponentialRampToValueAtTime(620, now + 0.045);
+            carrier.frequency.exponentialRampToValueAtTime(520, now + duration);
+
+            // 2. Spring Flutter LFO (Frequency modulation: 26Hz down to 18Hz wobble)
+            const lfo = ctx.createOscillator();
+            const lfoGain = ctx.createGain();
+            lfo.frequency.setValueAtTime(26, now);
+            lfo.frequency.exponentialRampToValueAtTime(18, now + duration);
+
+            lfoGain.gain.setValueAtTime(65, now);
+            lfoGain.gain.exponentialRampToValueAtTime(1.0, now + duration);
+
+            lfo.connect(carrier.frequency);
+
+            // 3. Metallic overtone (spring harmonics)
+            const overtone = ctx.createOscillator();
+            const overtoneGain = ctx.createGain();
+            overtone.type = 'triangle';
+            overtone.frequency.setValueAtTime(410, now);
+            overtone.frequency.exponentialRampToValueAtTime(1260, now + 0.045);
+            overtone.frequency.exponentialRampToValueAtTime(1050, now + duration);
+
+            overtoneGain.gain.setValueAtTime(0.2, now);
+            overtoneGain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+            // 4. Master Volume Envelope
+            const masterGain = ctx.createGain();
+            masterGain.gain.setValueAtTime(0.001, now);
+            masterGain.gain.linearRampToValueAtTime(0.4, now + 0.015);
+            masterGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+            carrier.connect(masterGain);
+            overtone.connect(overtoneGain);
+            overtoneGain.connect(masterGain);
+            masterGain.connect(ctx.destination);
+
+            carrier.start(now);
+            lfo.start(now);
+            overtone.start(now);
+
+            carrier.stop(now + duration);
+            lfo.stop(now + duration);
+            overtone.stop(now + duration);
+        } catch (e) {
+            console.warn('[Audio] Toing synthesis notice:', e);
+        }
+    };
+
+    // Play "toinggggg" sound with native bridge -> HTML5 Audio -> Web Audio synthesis
+    const playNotificationSound = () => {
+        // 1. Android Native MediaPlayer (0ms lag, loud & clear)
+        try {
+            if (window.NativeNotification && typeof window.NativeNotification.playToingSound === 'function') {
+                window.NativeNotification.playToingSound();
+                return;
+            }
+        } catch (_) {}
+
+        // 2. HTML5 Audio using toing.wav
+        try {
+            const audio = new Audio('toing.wav');
+            audio.volume = 0.95;
+            const p = audio.play();
+            if (p && typeof p.catch === 'function') {
+                p.catch(() => playSynthesizedToing());
+            }
+        } catch (_) {
+            playSynthesizedToing();
+        }
     };
 
     // Show Toast
@@ -95,8 +184,42 @@
     };
 
     // ─────────────────────────────────────────────────────────────
-    // 1. PWA SERVICE WORKER & NOTIFICATIONS
+    // 1. NOTIFICATIONS & PWA INITIALIZATION
     // ─────────────────────────────────────────────────────────────
+    const triggerNotification = (title, body, type = 'general') => {
+        console.log('[Notification]', title, body, type);
+        playNotificationSound();
+
+        // 1. Android Native Notification Bar (Status bar / Heads-up drawer)
+        if (window.NativeNotification && typeof window.NativeNotification.showNotification === 'function') {
+            try {
+                window.NativeNotification.showNotification(title, body, type);
+                return;
+            } catch (err) {
+                console.warn('[NativeNotification] showNotification error:', err);
+            }
+        }
+
+        // 2. Capacitor Plugin API fallback
+        if (window.Capacitor?.Plugins?.PortfolioNotification?.showNotification) {
+            try {
+                window.Capacitor.Plugins.PortfolioNotification.showNotification({ title, body, type });
+                return;
+            } catch (_) {}
+        }
+
+        // 3. Web Notification API fallback (Desktop browser / PWA)
+        if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIF', title, body });
+                } else {
+                    new Notification(title, { body, icon: 'icon.png' });
+                }
+            } catch (_) {}
+        }
+    };
+
     const initPWA = () => {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js')
@@ -115,34 +238,59 @@
             showToast('Tap Settings to install dashboard app on your phone');
         });
 
-        // Check Notification Permission
-        if ('Notification' in window) {
-            if (Notification.permission === 'default' && elements.notifBar) {
-                elements.notifBar.style.display = 'flex';
+        const isNative = Boolean(window.NativeNotification && window.NativeNotification.isNativeApp && window.NativeNotification.isNativeApp());
+
+        // Check & request permissions
+        const requestNotificationPermission = async () => {
+            if (window.NativeNotification && typeof window.NativeNotification.requestPermission === 'function') {
+                window.NativeNotification.requestPermission();
+                if (elements.notifBar) elements.notifBar.style.display = 'none';
+                showToast('Notification Permission Requested ✓');
+                return;
             }
-        }
+            if ('Notification' in window) {
+                const perm = await Notification.requestPermission();
+                if (perm === 'granted') {
+                    if (elements.notifBar) elements.notifBar.style.display = 'none';
+                    showToast('Push Notifications Enabled ✓');
+                    triggerNotification('Notifications Active ⭐', 'Toing! Real-time alerts for inquiries and reviews enabled.', 'system');
+                }
+            }
+        };
 
         if (elements.enableNotifsBtn) {
-            elements.enableNotifsBtn.addEventListener('click', async () => {
-                if ('Notification' in window) {
-                    const perm = await Notification.requestPermission();
-                    if (perm === 'granted') {
-                        elements.notifBar.style.display = 'none';
-                        showToast('Push Notifications Enabled ✓');
-                        triggerNotification('Notifications Active', 'You will receive real-time alerts for new client inquiries.');
-                    }
+            elements.enableNotifsBtn.addEventListener('click', requestNotificationPermission);
+        }
+
+        // Notification Bell Button (#notif-btn) in top app bar:
+        // Tapping it plays the toing sound and tests notification bar delivery!
+        const notifBtn = document.getElementById('notif-btn');
+        if (notifBtn) {
+            notifBtn.addEventListener('click', () => {
+                showToast('🔔 Notification Alert with Toing Sound!');
+                if (window.NativeNotification && typeof window.NativeNotification.requestPermission === 'function') {
+                    window.NativeNotification.requestPermission();
                 }
+                triggerNotification(
+                    'Akshay Console Active ⭐',
+                    'Toing! Real-time notifications for messages and reviews are working perfectly in the notification bar.',
+                    'test'
+                );
             });
         }
-    };
 
-    const triggerNotification = (title, body) => {
-        playNotificationSound();
-        if ('Notification' in window && Notification.permission === 'granted') {
-            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({ type: 'SHOW_NOTIF', title, body });
-            } else {
-                new Notification(title, { body, icon: 'icon.png' });
+        // Check permission state for showing banner
+        if (isNative) {
+            try {
+                if (window.NativeNotification.areNotificationsEnabled && !window.NativeNotification.areNotificationsEnabled()) {
+                    if (elements.notifBar) elements.notifBar.style.display = 'flex';
+                } else if (elements.notifBar) {
+                    elements.notifBar.style.display = 'none';
+                }
+            } catch (_) {}
+        } else if ('Notification' in window) {
+            if (Notification.permission === 'default' && elements.notifBar) {
+                elements.notifBar.style.display = 'flex';
             }
         }
     };
@@ -989,20 +1137,28 @@
         });
 
         window.addEventListener('portfolio-message-received', (e) => {
+            const m = e.detail;
+            if (m && m.eventType !== 'DELETE') {
+                const name = m.name || 'Visitor';
+                const comp = m.company ? ` (${m.company})` : '';
+                const snippet = m.message ? `: "${m.message.slice(0, 70)}${m.message.length > 70 ? '...' : ''}"` : '';
+                triggerNotification('New Portfolio Message 📬', `${name}${comp} sent an inquiry${snippet}`, 'message');
+            }
             if (state.isUnlocked) {
                 loadAllData();
-                const m = e.detail;
-                triggerNotification('New Portfolio Message 📬', `${m?.name || 'Visitor'} sent an inquiry.`);
             }
         });
 
         window.addEventListener('portfolio-review-saved', (e) => {
+            const r = e.detail;
+            if (r && !r.deleted && (r.status === 'pending' || r.eventType === 'INSERT')) {
+                const author = r.author_name || 'Client';
+                const stars = r.rating ? ` (${r.rating}★)` : '';
+                const snippet = r.content ? `: "${r.content.slice(0, 70)}${r.content.length > 70 ? '...' : ''}"` : '';
+                triggerNotification('New Review Submitted ⭐', `${author}${stars} submitted a review${snippet}`, 'review');
+            }
             if (state.isUnlocked) {
                 loadAllData();
-                const r = e.detail;
-                if (r && r.status === 'pending') {
-                    triggerNotification('New Review Submitted ⭐', `${r.author_name || 'Client'} submitted a review.`);
-                }
             }
         });
 
@@ -1043,6 +1199,17 @@
 
         // Modal triggers
         document.getElementById('settings-btn')?.addEventListener('click', () => openModal('settings-modal'));
+        document.getElementById('settings-test-notif-btn')?.addEventListener('click', () => {
+            showToast('🔔 Testing Toing Sound & Status Bar Notification...');
+            if (window.NativeNotification && typeof window.NativeNotification.requestPermission === 'function') {
+                window.NativeNotification.requestPermission();
+            }
+            triggerNotification(
+                'Akshay Console Test ⭐',
+                'Toing! Real-time notifications for messages and reviews are working perfectly in the notification bar.',
+                'test'
+            );
+        });
         document.getElementById('settings-logout-btn')?.addEventListener('click', async () => {
             await window.PortfolioData?.logoutAdmin();
             closeModal('settings-modal');
@@ -1860,67 +2027,89 @@
         } catch (_) {}
 
         // Cross-device continuous synchronization poll (messages, reviews, projects, experiences)
-        setInterval(async () => {
-            if (!state.isUnlocked) return;
+        let knownMsgIds = new Set((state.messages || []).map(m => m.id));
+        let knownPendingReviewIds = new Set((state.reviews || []).filter(r => r.status === 'pending').map(r => r.id));
+        let isInitialPollDone = false;
 
-            const prevMsgIds = new Set(state.messages.map(m => m.id));
-            const prevPendingReviews = state.reviews.filter(r => r.status === 'pending').length;
-            const prevPendingIds = new Set(
-                state.reviews.filter(r => r.status === 'pending').map(r => r.id)
-            );
-            const prevProjSig = state.projects.map(p => `${p.id}:${p.order_index}:${p.title}`).join('|');
-            const prevExpSig = state.experiences.map(e => `${e.id}:${e.order_index}:${e.role}`).join('|');
+        setInterval(async () => {
+            if (!window.PortfolioData) return;
+
+            const prevProjSig = (state.projects || []).map(p => `${p.id}:${p.order_index}:${p.title}`).join('|');
+            const prevExpSig = (state.experiences || []).map(e => `${e.id}:${e.order_index}:${e.role}`).join('|');
 
             try {
-                const [latestMsgs, latestReviews, latestProjs, latestExps] = await Promise.all([
-                    window.PortfolioData.getMessages({ forceCloud: true }),
-                    window.PortfolioData.getAllReviews({ forceCloud: true }),
-                    (window.PortfolioData.getAllProjectsForAdmin ? window.PortfolioData.getAllProjectsForAdmin({ forceCloud: true }) : window.PortfolioData.getProjects({ forceCloud: true })),
-                    window.PortfolioData.getExperiences({ forceCloud: true })
+                // Fetch latest messages & reviews from cloud/store (works even if screen is locked)
+                const [latestMsgs, latestReviews] = await Promise.all([
+                    window.PortfolioData.getMessages({ forceCloud: true }).catch(() => null),
+                    window.PortfolioData.getAllReviews({ forceCloud: true }).catch(() => null)
                 ]);
 
                 if (Array.isArray(latestMsgs)) {
-                    const newOnes = latestMsgs.filter(m => m.id && !prevMsgIds.has(m.id));
-                    state.messages = latestMsgs;
-                    renderMessages();
-                    updateBadges();
-                    if (newOnes.length > 0) {
-                        const newest = newOnes[0];
-                        triggerNotification('New Portfolio Message 📬', `${newest.name} from ${newest.company || 'Direct'} sent an inquiry.`);
+                    if (isInitialPollDone) {
+                        const newOnes = latestMsgs.filter(m => m.id && !knownMsgIds.has(m.id));
+                        if (newOnes.length > 0) {
+                            const newest = newOnes[0];
+                            const sender = newest.name || 'Visitor';
+                            const comp = newest.company ? ` (${newest.company})` : '';
+                            const snippet = newest.message ? `: "${newest.message.slice(0, 70)}${newest.message.length > 70 ? '...' : ''}"` : '';
+                            triggerNotification('New Portfolio Message 📬', `${sender}${comp} sent an inquiry${snippet}`, 'message');
+                        }
+                    }
+                    knownMsgIds = new Set(latestMsgs.map(m => m.id));
+                    if (state.isUnlocked) {
+                        state.messages = latestMsgs;
+                        renderMessages();
+                        updateBadges();
                     }
                 }
 
                 if (Array.isArray(latestReviews)) {
-                    const newPending = latestReviews.filter(
-                        r => r.status === 'pending' && r.id && !prevPendingIds.has(r.id)
-                    );
-                    state.reviews = latestReviews;
-                    renderReviews();
-                    updateBadges();
-                    if (newPending.length > 0 || latestReviews.filter(r => r.status === 'pending').length > prevPendingReviews) {
+                    const currentPending = latestReviews.filter(r => r.status === 'pending');
+                    if (isInitialPollDone) {
+                        const newPending = currentPending.filter(r => r.id && !knownPendingReviewIds.has(r.id));
                         if (newPending.length > 0) {
-                            triggerNotification('New Client Review ⭐', 'A client has submitted a review.');
+                            const newestRev = newPending[0];
+                            const author = newestRev.author_name || 'Client';
+                            const stars = newestRev.rating ? ` (${newestRev.rating}★)` : '';
+                            const snippet = newestRev.content ? `: "${newestRev.content.slice(0, 70)}${newestRev.content.length > 70 ? '...' : ''}"` : '';
+                            triggerNotification('New Review Submitted ⭐', `${author}${stars} submitted a review${snippet}`, 'review');
+                        }
+                    }
+                    knownPendingReviewIds = new Set(currentPending.map(r => r.id));
+                    if (state.isUnlocked) {
+                        state.reviews = latestReviews;
+                        renderReviews();
+                        updateBadges();
+                    }
+                }
+
+                isInitialPollDone = true;
+
+                // Sync projects and experiences if authenticated
+                if (state.isUnlocked) {
+                    const [latestProjs, latestExps] = await Promise.all([
+                        (window.PortfolioData.getAllProjectsForAdmin ? window.PortfolioData.getAllProjectsForAdmin({ forceCloud: true }) : window.PortfolioData.getProjects({ forceCloud: true })).catch(() => null),
+                        window.PortfolioData.getExperiences({ forceCloud: true }).catch(() => null)
+                    ]);
+
+                    if (Array.isArray(latestProjs)) {
+                        const newProjSig = latestProjs.map(p => `${p.id}:${p.order_index}:${p.title}`).join('|');
+                        if (newProjSig !== prevProjSig) {
+                            state.projects = latestProjs;
+                            renderProjects();
+                        }
+                    }
+
+                    if (Array.isArray(latestExps)) {
+                        const newExpSig = latestExps.map(e => `${e.id}:${e.order_index}:${e.role}`).join('|');
+                        if (newExpSig !== prevExpSig) {
+                            state.experiences = latestExps;
+                            renderExperiences();
                         }
                     }
                 }
-
-                if (Array.isArray(latestProjs)) {
-                    const newProjSig = latestProjs.map(p => `${p.id}:${p.order_index}:${p.title}`).join('|');
-                    if (newProjSig !== prevProjSig) {
-                        state.projects = latestProjs;
-                        renderProjects();
-                    }
-                }
-
-                if (Array.isArray(latestExps)) {
-                    const newExpSig = latestExps.map(e => `${e.id}:${e.order_index}:${e.role}`).join('|');
-                    if (newExpSig !== prevExpSig) {
-                        state.experiences = latestExps;
-                        renderExperiences();
-                    }
-                }
             } catch (_) {}
-        }, 6000);
+        }, 5000);
     };
 
     if (document.readyState === 'loading') {
